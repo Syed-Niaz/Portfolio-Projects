@@ -3,13 +3,13 @@ USE portfolio_project;
 SELECT * 
 FROM portfolio_project.dbo.NashvilleHousing;
 
--------- Standardize Date Format-------------------
+------------------- Standardize Date Format ---------------------------
 
 SELECT saledate, CONVERT(date, SaleDate)
 FROM portfolio_project.dbo.NashvilleHousing;
 
 
---New 'SaleDateConverted' column added & filled with converted SaleDate column values
+-------New 'SaleDateConverted' column added & filled with converted SaleDate column values
 
 ALTER TABLE NashvilleHousing	
 ADD SaleDateConverted DATE;
@@ -18,8 +18,7 @@ UPDATE NashvilleHousing
 SET SaleDateConverted = CONVERT(date, SaleDate);
 
 
-
---------- Populate Property Address data---------------
+----------------- Populate Property Address data --------------------
 
 --Check for Null values in PropertyAddress
 
@@ -28,17 +27,17 @@ FROM NashvilleHousing
 WHERE PropertyAddress IS NULL;
 
 
---Self Join the table
+------Self Join the table
 
-SELECT t1.ParcelID, t1.PropertyAddress, t2.ParcelID, t2.PropertyAddress, ISNULL(t1.PropertyAddress, t2.PropertyAddress)	--ISNULL checks  with 1st for null, fills with 2nd)
+SELECT t1.ParcelID, t1.PropertyAddress, t2.ParcelID, t2.PropertyAddress, ISNULL(t1.PropertyAddress, t2.PropertyAddress)
 FROM NashvilleHousing AS t1
 JOIN NashvilleHousing AS t2
-	ON t1.ParcelID = t2.ParcelID		--when ParcelID is same. But UniqueID is diff so we don't get the same row. 
+	ON t1.ParcelID = t2.ParcelID
 	AND t1.[UniqueID ] <> t2.[UniqueID ]
 WHERE t1.PropertyAddress IS NULL;
 
 
---Update table to. After running this query run previous query if blank then ALL GOOD
+------Update table to. After running this query run previous query if it's blank then it worked
 
 UPDATE t1
 SET PropertyAddress = ISNULL(t1.PropertyAddress, t2.PropertyAddress)
@@ -47,7 +46,6 @@ JOIN NashvilleHousing AS t2
 	ON t1.ParcelID = t2.ParcelID
 	AND t1.[UniqueID ] <> t2.[UniqueID ]
 WHERE t1.PropertyAddress IS NULL;
-
 
 
 ----------Breaking out Addrress into diff cols (Address, City, State)-----------
@@ -68,7 +66,7 @@ SUBSTRING(PropertyAddress, CHARINDEX(',' , PropertyAddress) +1, LEN(PropertyAddr
 FROM portfolio_project.dbo.NashvilleHousing;
 
 
---To separate values into two cols we need to add tow cols
+-------To separate values into two cols we need to add two cols
 
 
 ALTER TABLE NashvilleHousing
@@ -78,7 +76,6 @@ UPDATE NashvilleHousing
 SET PropertySplitAddress = SUBSTRING(PropertyAddress, 1, CHARINDEX( ',' , PropertyAddress) - 1);
 
 
-
 ALTER TABLE NashvilleHousing
 ADD PropertySplitCity VARCHAR(100);
 
@@ -86,10 +83,7 @@ UPDATE NashvilleHousing
 SET PropertySplitCity = SUBSTRING(PropertyAddress, CHARINDEX(',' , PropertyAddress) +1, LEN(PropertyAddress));
 
 
-
 ---------------Now for OwnerAddress-------------------------
---For Ref |		SUBSTRING(string, start, length)	|	CHARINDEX(substring, string, start)	| PARSENAME (object_name, object_piece )
-
 
 SELECT
 PARSENAME(REPLACE(OwnerAddress, ',' , '.') , 3) ,
@@ -98,7 +92,7 @@ PARSENAME(REPLACE(OwnerAddress, ',' , '.') , 1)
 FROM NashvilleHousing;
 
 
---Update table--
+-----------Update table
 
 
 ALTER TABLE NashvilleHousing
@@ -108,7 +102,6 @@ UPDATE NashvilleHousing
 SET OwnerSplitAddress = PARSENAME(REPLACE(OwnerAddress, ',' , '.') , 3);
 
 
-
 ALTER TABLE NashvilleHousing
 ADD OwnerSplitCity VARCHAR(100);
 
@@ -116,14 +109,11 @@ UPDATE NashvilleHousing
 SET OwnerSplitCity = PARSENAME(REPLACE(OwnerAddress, ',' , '.') , 2);
 
 
-
 ALTER TABLE NashvilleHousing
 ADD OwnerSplitState VARCHAR(100);
 
 UPDATE NashvilleHousing
 SET OwnerSplitState = PARSENAME(REPLACE(OwnerAddress, ',' , '.') , 1);
-
-
 
 
 -------------Change Y and N to Yes and No in "Sold as Vacant" field----------------
@@ -146,13 +136,12 @@ SET SoldAsVacant =
 	END;
 
 
-----Check---
+-------------Check
 
 
 SELECT DISTINCT(SoldAsVacant), COUNT(SoldAsVacant)
 FROM NashvilleHousing
 GROUP BY SoldAsVacant;
-
 
 
 -------------Get rid of duplicates---------------
@@ -175,7 +164,7 @@ FROM RowNumCTE
 WHERE row_num > 1;
 
 
------Check
+----------Check
 
 WITH RowNumCTE AS (
 
@@ -195,11 +184,7 @@ FROM RowNumCTE
 WHERE row_num > 1;
 
 
--------------------Delete all the extra cols------------
+----------------------------Delete all the extra cols--------------------
 
 ALTER TABLE NashvilleHousing
-DROP COLUMN OwnerAddress, TaxDistrict, PropertyAddress;
-
-
-ALTER TABLE NashvilleHousing
-DROP COLUMN SaleDate;
+DROP COLUMN OwnerAddress, SaleDate, TaxDistrict, PropertyAddress;
